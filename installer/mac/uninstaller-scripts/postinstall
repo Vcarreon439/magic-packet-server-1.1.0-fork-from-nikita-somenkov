@@ -1,0 +1,8 @@
+#!/bin/sh
+
+rm /usr/local/bin/mpserver
+rm /usr/local/bin/mpworker
+rm /Library/LaunchDaemons/ru.somenkov.mpserver.plist
+rm /Library/LaunchDaemons/ru.somenkov.mpworker.plist
+rm /var/log/mpserver-stdout.log
+rm /var/log/mpserver-stderr.log

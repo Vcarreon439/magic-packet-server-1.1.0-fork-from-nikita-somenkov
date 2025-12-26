@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Magic Packet Server Daemon Uninstaller</title>
+    <organization>ru.somenkov</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="never" require-scripts="true" rootVolumeOnly="true" />
+    <pkg-ref id="ru.somenkov.mpserver" version="0" auth="root">uninstaller.pkg</pkg-ref>
+    <choices-outline>
+        <line choice="ru.somenkov.mpserver"/>
+    </choices-outline>
+    <choice
+        id="ru.somenkov.mpserver"
+        visible="true"
+        title="Magic Packet Server Daemon Uninstaller"
+        description="Helper for Magic Packet Application for shutdown/reboot your Mac"
+        start_selected="true">
+      <pkg-ref id="ru.somenkov.mpserver"/>
+    </choice>
+</installer-gui-script>

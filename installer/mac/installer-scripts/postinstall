@@ -1,0 +1,52 @@
+#!/bin/sh
+
+set -e
+
+function make_service() {
+    local id=$1
+    local bin=$2
+    local path=$3
+
+    cat <<ENDL >/Library/LaunchDaemons/ru.somenkov.${id}.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+      <string>ru.somenkov.${id}</string>
+    <key>Program</key>
+      <string>${bin}</string>
+    <key>KeepAlive</key>
+      <true/>
+    <key>StandardOutPath</key>
+      <string>/var/log/${id}-stdout.log</string>
+    <key>StandardErrorPath</key>
+      <string>/var/log/${id}-stderr.log</string>
+    <key>LaunchOnlyOnce</key><true/>
+ENDL
+
+    if [[ "$id" == "mpserver" ]]; then
+        cat <<ENDL >>/Library/LaunchDaemons/ru.somenkov.${id}.plist
+    <key>UserName</key>
+      <string>_www</string>
+    <key>GroupName</key>
+      <string>_www</string>
+ENDL
+    fi
+
+    cat <<ENDL >>/Library/LaunchDaemons/ru.somenkov.${id}.plist
+  </dict>
+</plist>
+ENDL
+}
+
+make_service mpworker /usr/local/bin/mpworker
+make_service mpserver /usr/local/bin/mpserver
+
+touch /var/log/mpserver-stdout.log
+touch /var/log/mpserver-stderr.log
+chown _www:_www /var/log/mpserver-stdout.log
+chown _www:_www /var/log/mpserver-stderr.log
+
+/bin/launchctl load "/Library/LaunchDaemons/ru.somenkov.mpworker.plist"
+/bin/launchctl load "/Library/LaunchDaemons/ru.somenkov.mpserver.plist"

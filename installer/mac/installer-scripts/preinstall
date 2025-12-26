@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+if /bin/launchctl list "ru.somenkov.mpserver" &> /dev/null; then
+    /bin/launchctl unload "/Library/LaunchDaemons/ru.somenkov.mpserver.plist"
+fi
+if /bin/launchctl list "ru.somenkov.mpworker" &> /dev/null; then
+    /bin/launchctl unload "/Library/LaunchDaemons/ru.somenkov.mpworker.plist"
+fi
