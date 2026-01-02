@@ -1,6 +1,7 @@
 venv
 .idea
 __pycache__
-
+*.db
 build
 dist
+__init__.py
