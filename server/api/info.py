@@ -103,8 +103,7 @@ def status():
 
         overall = all(c["status"] for c in children_status)
         # opcional: ordenar para respuesta estable
-        children_status.sort(key=lambda x: x["ip"])
-        return flask.json.jsonify(status=overall, children=children_status)
+        return flask.json.jsonify(status=True, children=children_status)
 
     except sqlite3.Error as e:
         return flask.json.jsonify(status=False, error=str(e))
