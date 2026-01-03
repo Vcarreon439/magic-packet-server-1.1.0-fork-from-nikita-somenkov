@@ -1,8 +1,8 @@
 """control.py: Control controller API"""
 
-__author__ = "Nikita Somenkov"
-__email__ = "somenkov.nikita@icloud.com"
-__copyright__ = "Copyright 2020, Nikita Somenkov"
+__author__ = "Nikita Somenkov, Victor Carreon"
+__email__ = "somenkov.nikita@icloud.com, victor.carreon@pm.me"
+__copyright__ = "Copyright 2020–2026, Nikita Somenkov & Victor Carreon"
 __license__ = "GPL"
 
 import flask
