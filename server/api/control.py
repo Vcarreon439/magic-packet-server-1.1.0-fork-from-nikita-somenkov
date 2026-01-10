@@ -9,15 +9,49 @@ import flask
 import flask.json
 import flask.blueprints
 import json
+import os
 from wakeonlan import send_magic_packet
 import sqlite3
 import pathlib
 import requests
+import typing
 import lib.connectivity
 
 _DB_PATH = pathlib.Path(__file__).resolve().parent.parent / "data" / "devices.db"
 control = flask.blueprints.Blueprint("control", __name__)
 is_server_flag = _DB_PATH.exists()
+_API_KEY_ENV = "MP_API_KEY"
+
+
+def _get_api_key() -> typing.Optional[str]:
+    api_key = os.environ.get(_API_KEY_ENV)
+    if api_key:
+        return api_key.strip()
+    return None
+
+
+def _extract_api_key() -> typing.Optional[str]:
+    auth_header = flask.request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header.removeprefix("Bearer ").strip()
+    return flask.request.headers.get("X-API-Key")
+
+
+@control.before_request
+def _require_api_key():
+    expected_key = _get_api_key()
+    if not expected_key:
+        return flask.json.jsonify(
+            status=False,
+            message=f"API key is not configured. Set {_API_KEY_ENV}."
+        ), 500
+
+    provided_key = _extract_api_key()
+    if provided_key != expected_key:
+        return flask.json.jsonify(
+            status=False,
+            message="Unauthorized."
+        ), 401
 
 
 def _generic_handler(connectivity_function):
@@ -39,6 +73,13 @@ def _generic_handler(connectivity_function):
 
 def _get_connectivity() -> lib.connectivity.Connectivity:
     return flask.current_app.connectivity
+
+
+def _get_auth_headers() -> dict:
+    api_key = _get_api_key()
+    if not api_key:
+        return {}
+    return {"Authorization": f"Bearer {api_key}"}
 
 
 def _init_database():
@@ -221,7 +262,18 @@ def shutdown_device():
             ), 400
         
         #POST request to device shutdown endpoint
-        result = requests.post(f"http://{ip}:{5154}/control/shutdown", timeout=5)
+        headers = _get_auth_headers()
+        if not headers:
+            return flask.json.jsonify(
+                status=False,
+                message=f"API key is not configured. Set {_API_KEY_ENV}."
+            ), 500
+
+        result = requests.post(
+            f"http://{ip}:{5154}/control/shutdown",
+            headers=headers,
+            timeout=5
+        )
 
         if result.status_code != 200:
             return flask.json.jsonify(
@@ -266,7 +318,18 @@ def reboot_device():
             ), 400
         
         #POST request to device reboot endpoint
-        result = requests.post(f"http://{ip}:{5154}/control/reboot", timeout=5)
+        headers = _get_auth_headers()
+        if not headers:
+            return flask.json.jsonify(
+                status=False,
+                message=f"API key is not configured. Set {_API_KEY_ENV}."
+            ), 500
+
+        result = requests.post(
+            f"http://{ip}:{5154}/control/reboot",
+            headers=headers,
+            timeout=5
+        )
 
         if result.status_code != 200:
             return flask.json.jsonify(
@@ -311,7 +374,18 @@ def sleep_device():
             ), 400
         
         #POST request to device sleep endpoint
-        result = requests.post(f"http://{ip}:{5154}/control/sleep", timeout=5)
+        headers = _get_auth_headers()
+        if not headers:
+            return flask.json.jsonify(
+                status=False,
+                message=f"API key is not configured. Set {_API_KEY_ENV}."
+            ), 500
+
+        result = requests.post(
+            f"http://{ip}:{5154}/control/sleep",
+            headers=headers,
+            timeout=5
+        )
 
         if result.status_code != 200:
             return flask.json.jsonify(
