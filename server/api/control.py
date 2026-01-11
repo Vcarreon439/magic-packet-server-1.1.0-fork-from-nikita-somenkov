@@ -18,8 +18,10 @@ import lib.connectivity
 
 _DB_PATH = pathlib.Path(__file__).resolve().parent.parent / "data" / "devices.db"
 control = flask.blueprints.Blueprint("control", __name__)
-is_server_flag = _DB_PATH.exists()
 _API_KEY_SETTING = "api_key"
+
+def _is_server_mode() -> bool:
+    return _DB_PATH.exists()
 
 def _generic_handler(connectivity_function):
     timeout = 0
@@ -99,7 +101,9 @@ def _validate_api_key():
 @control.route("/control/shutdown", methods=["POST"])
 def shutdown():
 
-    if is_server_flag:
+
+
+    if _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Server shutdown is not allowed."
@@ -111,7 +115,7 @@ def shutdown():
 @control.route("/control/reboot", methods=["POST"])
 def reboot():
 
-    if is_server_flag:
+    if _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Server reboot is not allowed."
@@ -123,7 +127,7 @@ def reboot():
 @control.route("/control/sleep", methods=["POST"])
 def sleep():
 
-    if is_server_flag:
+    if _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Server sleep is not allowed."
@@ -136,7 +140,7 @@ def sleep():
 def setup():
 
     #If server is already setup, return error
-    if is_server_flag:
+    if _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Server is already set up. If you want to reconfigure due to api key loss, reinstall the app."
@@ -172,7 +176,7 @@ def configure_device():
             message="Invalid API key."
         ), 403
 
-    if not is_server_flag:
+    if not _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Method allowed only in server mode."
@@ -219,7 +223,7 @@ def list_devices():
             message="Invalid API key."
         ), 403
 
-    if not is_server_flag:
+    if not _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Method allowed only in server mode."
@@ -266,7 +270,7 @@ def wake_device():
             message="Invalid API key."
         ), 403
 
-    if not is_server_flag:
+    if not _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Method allowed only in server mode."
@@ -311,13 +315,13 @@ def shutdown_device():
                 message="Invalid API key."
             ), 403
 
-        if not is_server_flag:
+        if not _is_server_mode():
             return flask.json.jsonify(
                 status=False,
                 message="Method allowed only in server mode."
             ), 400
 
-        if not is_server_flag:
+        if not _is_server_mode():
             return flask.json.jsonify(
                 status=False,
                 message="Method allowed only in server mode."
@@ -368,13 +372,13 @@ def reboot_device():
                 message="Invalid API key."
             ), 403
 
-        if not is_server_flag:
+        if not _is_server_mode():
             return flask.json.jsonify(
                 status=False,
                 message="Method allowed only in server mode."
             ), 400
 
-        if not is_server_flag:
+        if not _is_server_mode():
             return flask.json.jsonify(
                 status=False,
                 message="Method allowed only in server mode."
@@ -425,7 +429,7 @@ def sleep_device():
                 message="Invalid API key."
             ), 403
 
-        if not is_server_flag:
+        if not _is_server_mode():
             return flask.json.jsonify(
                 status=False,
                 message="Method allowed only in server mode."
