@@ -21,7 +21,6 @@ control = flask.blueprints.Blueprint("control", __name__)
 is_server_flag = _DB_PATH.exists()
 _API_KEY_SETTING = "api_key"
 
-
 def _generic_handler(connectivity_function):
     timeout = 0
 
@@ -149,13 +148,15 @@ def setup():
     if flask.request.is_json:
         api_key = flask.request.json.get("api_key")
 
-        #If not provided, generate a random one
-        if not api_key:
+        #If not provided or empty, generate a random one
+        if not api_key or api_key.strip() == "":
             import secrets
             api_key = secrets.token_hex(16)
 
         if api_key:
             _set_setting(_API_KEY_SETTING, api_key)
+
+    is_server_flag = True
 
     response = flask.json.jsonify(
         status=True,
