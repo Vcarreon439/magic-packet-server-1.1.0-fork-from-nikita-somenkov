@@ -9,6 +9,8 @@
 
 ##### Server Methods
 
+![server_example](media/server.png)
+
 Set up server for managing internal devices
 
 - Enable this if you dont neccesary want to expose ip address of internal devices
