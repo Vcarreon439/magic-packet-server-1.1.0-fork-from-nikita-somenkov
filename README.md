@@ -30,7 +30,7 @@ Install Client Mode on devices that need to be managed. You have two ways to use
 
 ---
 
-#### Common info methods:
+### Common info methods:
 
 ##### Server Methods
 
