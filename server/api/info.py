@@ -116,7 +116,7 @@ def version():
         mode_server = check_server_status_cached()
         return flask.json.jsonify(
             mode_server=mode_server,
-            version="1.1.1",
+            version="1.1.2",
         )
     
     except sqlite3.Error as e:
@@ -124,6 +124,6 @@ def version():
         print(f"Database error: {e}")
         return flask.json.jsonify(
             mode_server=False,
-            version="1.1.1",
+            version="1.1.2",
         )
         
