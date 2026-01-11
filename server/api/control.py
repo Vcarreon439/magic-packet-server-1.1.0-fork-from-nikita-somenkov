@@ -19,15 +19,42 @@ import lib.connectivity
 
 _DB_PATH = pathlib.Path(__file__).resolve().parent.parent / "data" / "devices.db"
 control = flask.blueprints.Blueprint("control", __name__)
-is_server_flag = _DB_PATH.exists()
 _API_KEY_ENV = "MP_API_KEY"
+_API_KEY_SETTING = "api_key"
+
+
+def _is_server_mode() -> bool:
+    return _DB_PATH.exists()
+
+
+def _get_setting(key: str) -> typing.Optional[str]:
+    if not _DB_PATH.exists():
+        return None
+
+    connection = _init_database()
+    cursor = connection.cursor()
+    cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
+def _set_setting(key: str, value: str) -> None:
+    connection = _init_database()
+    with connection:
+        connection.execute(
+            """
+            INSERT OR REPLACE INTO settings (key, value)
+            VALUES (?, ?)
+            """,
+            (key, value)
+        )
 
 
 def _get_api_key() -> typing.Optional[str]:
     api_key = os.environ.get(_API_KEY_ENV)
     if api_key:
         return api_key.strip()
-    return None
+    return _get_setting(_API_KEY_SETTING)
 
 
 def _extract_api_key() -> typing.Optional[str]:
@@ -39,8 +66,13 @@ def _extract_api_key() -> typing.Optional[str]:
 
 @control.before_request
 def _require_api_key():
+    if not _is_server_mode():
+        return None
+
     expected_key = _get_api_key()
     if not expected_key:
+        if flask.request.endpoint == "control.setup":
+            return None
         return flask.json.jsonify(
             status=False,
             message=f"API key is not configured. Set {_API_KEY_ENV}."
@@ -96,13 +128,21 @@ def _init_database():
             )
             """
         )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+            """
+        )
     return connection
 
 
 @control.route("/control/shutdown", methods=["POST"])
 def shutdown():
 
-    if is_server_flag:
+    if _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Server shutdown is not allowed."
@@ -115,7 +155,7 @@ def shutdown():
 @control.route("/control/reboot", methods=["POST"])
 def reboot():
 
-    if is_server_flag:
+    if _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Server reboot is not allowed."
@@ -128,7 +168,7 @@ def reboot():
 @control.route("/control/sleep", methods=["POST"])
 def sleep():
 
-    if is_server_flag:
+    if _is_server_mode():
         return flask.json.jsonify(
             status=False,
             message="Server sleep is not allowed."
@@ -143,6 +183,10 @@ def sleep():
 def setup():
     # Initialize database for storing server settings
     _init_database()
+    if flask.request.is_json:
+        api_key = flask.request.json.get("api_key")
+        if api_key:
+            _set_setting(_API_KEY_SETTING, api_key)
     response = flask.json.jsonify(
         status=True,
         message="Server setup completed successfully."
@@ -240,7 +284,7 @@ def wake_device():
 def shutdown_device():
     try:
 
-        if not is_server_flag:
+        if not _is_server_mode():
             return flask.json.jsonify(
                 status=False,
                 message="Method allowed only in server mode."
@@ -296,7 +340,7 @@ def shutdown_device():
 def reboot_device():
     try:
 
-        if not is_server_flag:
+        if not _is_server_mode():
             return flask.json.jsonify(
                 status=False,
                 message="Method allowed only in server mode."
@@ -352,7 +396,7 @@ def reboot_device():
 def sleep_device():
     try:
 
-        if not is_server_flag:
+        if not _is_server_mode():
             return flask.json.jsonify(
                 status=False,
                 message="Method allowed only in server mode."
