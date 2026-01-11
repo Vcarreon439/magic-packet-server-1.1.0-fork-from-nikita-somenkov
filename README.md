@@ -5,6 +5,8 @@
 - Nikita Somenkov (original author)
 - Victor Carreon (co-author, (new routes and performance improvements))
 
+---
+
 ### Diference between server and client
 
 #### Server Mode: Centralized Management
@@ -22,9 +24,11 @@ Install Client Mode on devices that need to be managed. You have two ways to use
 
 - **Direct Access**: Configure individual port forwarding for each client to expose their specific IPs. This allows you to manage each device independently without relying on a central server.
 
-Note: Regardless of the mode, ensure the program is installed and firewall exceptions are added on every device.
+**Note**: Regardless of the mode, ensure the program is installed and firewall exceptions are added on every device.
 
 ![client_example](media/client.png)
+
+---
 
 #### Common info methods:
 
@@ -36,13 +40,24 @@ Set up server for managing internal devices
 
 - **Method**: `POST`
 - **Request:** `control/server/setup`
-- **Added in:** `1.1.1`
+- **Updated in:** `1.1.2`
+- **Input:**
+
+```json
+{
+  "api_key": ""
+}
+```
+
+If not provided it generates a **random** apikey
+
 - **Return:**
 
 ```json
 {
   "status": true,
-  "message": "Server setup completed successfully."
+  "api_key": "",
+  "message": "Server setup completed successfully. Please store the API key securely and restart service or device."
 }
 ```
 
@@ -50,9 +65,11 @@ Set up server for managing internal devices
 
 Store device info, for future retrieve and WoL management
 
+**_This route must have header Authorization_**
+
 - **Method**: `POST`
 - **Request:** `control/device/configure`
-- **Added in:** `1.1.1`
+- **Updated in:** `1.1.2`
 - **Input:**
 
 ```json
@@ -75,9 +92,11 @@ Store device info, for future retrieve and WoL management
 
 List stored devices
 
+**_This route must have header Authorization_**
+
 - **Method**: `GET`
 - **Request:** `control/device/list`
-- **Added in:** `1.1.1`
+- **Updated in:** `1.1.2`
 - **Return:**
 
 ```json
@@ -97,9 +116,11 @@ List stored devices
 
 Wakes external devices with WoL package
 
+**_This route must have header Authorization_**
+
 - **Method**: `POST`
 - **Request:** `control/device/wake`
-- **Added in:** `1.1.1`
+- **Updated in:** `1.1.2`
 - **Input:**
 
 ```json
@@ -114,6 +135,84 @@ Wakes external devices with WoL package
 {
   "status": true,
   "message": "Wake-on-LAN packet sent to {mac}."
+}
+```
+
+---
+
+Sleeps an external device with a POST request to the device IP
+
+**_This route must have header Authorization_**
+
+- **Method**: `POST`
+- **Request:** `control/device/sleep`
+- **Updated in:** `1.1.2`
+- **Input:**
+
+```json
+{
+  "ip": ""
+}
+```
+
+- **Return:**
+
+```json
+{
+  "message": "Sleep command sent to {ip}",
+  "status": true
+}
+```
+
+---
+
+Shutdown an external device with a POST request to the device IP
+
+**_This route must have header Authorization_**
+
+- **Method**: `POST`
+- **Request:** `control/device/shutdown`
+- **Updated in:** `1.1.2`
+- **Input:**
+
+```json
+{
+  "ip": ""
+}
+```
+
+- **Return:**
+
+```json
+{
+  "status": true,
+  "message": "Shutdown command sent to {ip}."
+}
+```
+
+---
+
+Reboot an external device with a POST request to the device IP
+
+**_This route must have header Authorization_**
+
+- **Method**: `POST`
+- **Request:** `control/device/reboot`
+- **Updated in:** `1.1.2`
+- **Input:**
+
+```json
+{
+  "ip": ""
+}
+```
+
+- **Return:**
+
+```json
+{
+  "status": true,
+  "message": "Reboot command sent to {ip}."
 }
 ```
 
