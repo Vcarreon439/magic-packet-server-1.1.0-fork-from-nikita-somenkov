@@ -149,19 +149,17 @@ def setup():
         api_key = flask.request.json.get("api_key")
 
         #If not provided or empty, generate a random one
-        if not api_key or api_key.strip() == "":
+        if not api_key or api_key == "":
             import secrets
             api_key = secrets.token_hex(16)
 
         if api_key:
             _set_setting(_API_KEY_SETTING, api_key)
 
-    is_server_flag = True
-
     response = flask.json.jsonify(
         status=True,
         api_key=_get_setting(_API_KEY_SETTING),
-        message="Server setup completed successfully. Please store the API key securely."
+        message="Server setup completed successfully. Please store the API key securely and restart service or device."
     )
     return response
 
