@@ -10,6 +10,7 @@
 ##### Server Methods
 
 ![server_example](media/server.png)
+![client_example](media/client.png)
 
 Set up server for managing internal devices
 
