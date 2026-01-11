@@ -9,6 +9,7 @@ import flask
 import flask.json
 import flask.blueprints
 import json
+import typing
 from wakeonlan import send_magic_packet
 import sqlite3
 import pathlib
@@ -18,6 +19,7 @@ import lib.connectivity
 _DB_PATH = pathlib.Path(__file__).resolve().parent.parent / "data" / "devices.db"
 control = flask.blueprints.Blueprint("control", __name__)
 is_server_flag = _DB_PATH.exists()
+_API_KEY_SETTING = "api_key"
 
 
 def _generic_handler(connectivity_function):
@@ -41,6 +43,28 @@ def _get_connectivity() -> lib.connectivity.Connectivity:
     return flask.current_app.connectivity
 
 
+def _get_setting(key: str) -> typing.Optional[str]:
+    if not _DB_PATH.exists():
+        return None
+
+    connection = _init_database()
+    cursor = connection.cursor()
+    cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
+def _set_setting(key: str, value: str) -> None:
+    connection = _init_database()
+    with connection:
+        connection.execute(
+            """
+            INSERT OR REPLACE INTO settings (key, value)
+            VALUES (?, ?)
+            """,
+            (key, value)
+        )
+
 def _init_database():
     _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(_DB_PATH)
@@ -52,6 +76,14 @@ def _init_database():
                 ip TEXT NOT NULL,
                 mac TEXT NOT NULL,
                 config TEXT
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
             )
             """
         )
@@ -100,11 +132,32 @@ def sleep():
 #Route for server setup
 @control.route("/control/server/setup", methods=["POST"])
 def setup():
+
+    #If server is already setup, return error
+    if is_server_flag:
+        return flask.json.jsonify(
+            status=False,
+            message="Server is already set up. If you want to reconfigure due to api key loss, reinstall the app."
+        ), 400
+    
     # Initialize database for storing server settings
     _init_database()
+
+    if flask.request.is_json:
+        api_key = flask.request.json.get("api_key")
+
+        #If not provided, generate a random one
+        if not api_key:
+            import secrets
+            api_key = secrets.token_hex(16)
+
+        if api_key:
+            _set_setting(_API_KEY_SETTING, api_key)
+
     response = flask.json.jsonify(
         status=True,
-        message="Server setup completed successfully."
+        api_key=_get_setting(_API_KEY_SETTING),
+        message="Server setup completed successfully. Please store the API key securely."
     )
     return response
 
@@ -143,8 +196,24 @@ def configure_device():
         message="Device configuration stored successfully."
     )
 
+
 @control.route("/control/device/list", methods=["GET"])
 def list_devices():
+    api_key = flask.request.headers.get("Authorization")
+    
+    if not api_key:
+        return flask.json.jsonify(
+            status=False,
+            message="Missing API key in Authorization header."
+        ), 401
+    
+    stored_api_key = _get_setting(_API_KEY_SETTING)
+    if not stored_api_key or api_key != stored_api_key:
+        return flask.json.jsonify(
+            status=False,
+            message="Invalid API key."
+        ), 403
+    
     connection = _init_database()
     cursor = connection.cursor()
     cursor.execute("SELECT ip, mac, config FROM devices")
