@@ -38,10 +38,8 @@ def _generic_handler(connectivity_function):
 
     return response
 
-
 def _get_connectivity() -> lib.connectivity.Connectivity:
     return flask.current_app.connectivity
-
 
 def _get_setting(key: str) -> typing.Optional[str]:
     if not _DB_PATH.exists():
@@ -52,7 +50,6 @@ def _get_setting(key: str) -> typing.Optional[str]:
     cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
     row = cursor.fetchone()
     return row[0] if row else None
-
 
 def _set_setting(key: str, value: str) -> None:
     connection = _init_database()
@@ -89,6 +86,16 @@ def _init_database():
         )
     return connection
 
+def _validate_api_key():
+    api_key = flask.request.headers.get("Authorization")
+    if not api_key:
+        return False
+
+    stored_api_key = _get_setting(_API_KEY_SETTING)
+    if not stored_api_key or api_key != stored_api_key:
+        return False
+
+    return True
 
 @control.route("/control/shutdown", methods=["POST"])
 def shutdown():
@@ -102,7 +109,6 @@ def shutdown():
     connectivity_object = _get_connectivity()
     return _generic_handler(connectivity_object.shutdown)
 
-
 @control.route("/control/reboot", methods=["POST"])
 def reboot():
 
@@ -114,7 +120,6 @@ def reboot():
     
     connectivity_object = _get_connectivity()
     return _generic_handler(connectivity_object.reboot)
-
 
 @control.route("/control/sleep", methods=["POST"])
 def sleep():
@@ -128,8 +133,6 @@ def sleep():
     connectivity_object = _get_connectivity()
     return _generic_handler(connectivity_object.sleep)
 
-
-#Route for server setup
 @control.route("/control/server/setup", methods=["POST"])
 def setup():
 
@@ -161,9 +164,21 @@ def setup():
     )
     return response
 
-#Router for store device configuration
 @control.route("/control/device/configure", methods=["POST"])
 def configure_device():
+
+    if not _validate_api_key():
+        return flask.json.jsonify(
+            status=False,
+            message="Invalid API key."
+        ), 403
+
+    if not is_server_flag:
+        return flask.json.jsonify(
+            status=False,
+            message="Method allowed only in server mode."
+        ), 400
+
     if not flask.request.is_json:
         return flask.json.jsonify(
             status=False,
@@ -196,9 +211,21 @@ def configure_device():
         message="Device configuration stored successfully."
     )
 
-
 @control.route("/control/device/list", methods=["GET"])
 def list_devices():
+
+    if not _validate_api_key():
+        return flask.json.jsonify(
+            status=False,
+            message="Invalid API key."
+        ), 403
+
+    if not is_server_flag:
+        return flask.json.jsonify(
+            status=False,
+            message="Method allowed only in server mode."
+        ), 400
+
     api_key = flask.request.headers.get("Authorization")
     
     if not api_key:
@@ -231,9 +258,20 @@ def list_devices():
         devices=devices
     )
 
-#Route for controling remote devices
 @control.route("/control/device/wake", methods=["POST"])
 def wake_device():
+
+    if not _validate_api_key():
+        return flask.json.jsonify(
+            status=False,
+            message="Invalid API key."
+        ), 403
+
+    if not is_server_flag:
+        return flask.json.jsonify(
+            status=False,
+            message="Method allowed only in server mode."
+        ), 400
 
     try:
         #Get device mac from request
@@ -267,6 +305,18 @@ def wake_device():
 @control.route("/control/device/shutdown", methods=["POST"])
 def shutdown_device():
     try:
+
+        if not _validate_api_key():
+            return flask.json.jsonify(
+                status=False,
+                message="Invalid API key."
+            ), 403
+
+        if not is_server_flag:
+            return flask.json.jsonify(
+                status=False,
+                message="Method allowed only in server mode."
+            ), 400
 
         if not is_server_flag:
             return flask.json.jsonify(
@@ -313,6 +363,18 @@ def shutdown_device():
 def reboot_device():
     try:
 
+        if not _validate_api_key():
+            return flask.json.jsonify(
+                status=False,
+                message="Invalid API key."
+            ), 403
+
+        if not is_server_flag:
+            return flask.json.jsonify(
+                status=False,
+                message="Method allowed only in server mode."
+            ), 400
+
         if not is_server_flag:
             return flask.json.jsonify(
                 status=False,
@@ -357,6 +419,12 @@ def reboot_device():
 @control.route("/control/device/sleep", methods=["POST"])
 def sleep_device():
     try:
+
+        if not _validate_api_key():
+            return flask.json.jsonify(
+                status=False,
+                message="Invalid API key."
+            ), 403
 
         if not is_server_flag:
             return flask.json.jsonify(
