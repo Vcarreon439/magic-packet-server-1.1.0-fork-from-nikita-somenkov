@@ -1,16 +1,34 @@
-### Magic Packet API
+# Magic Packet API
 
 ## Authors
 
 - Nikita Somenkov (original author)
 - Victor Carreon (co-author, (new routes and performance improvements))
 
+### Diference between server and client
+
+#### Server Mode: Centralized Management
+
+Server Mode: Centralized Management
+Use Server Mode if you want to manage your entire network through a single exposed device. This is the most secure and simplest method, as you only need to configure one entry point (IP/Port) for external access. The server then handles all power commands for the other devices within your local network.
+
+![server_example](media/server.png)
+
+#### Client Mode: Individual Control
+
+Install Client Mode on devices that need to be managed. You have two ways to use it:
+
+- **Standard**: Let the Server manage the device (no extra setup required).
+
+- **Direct Access**: Configure individual port forwarding for each client to expose their specific IPs. This allows you to manage each device independently without relying on a central server.
+
+Note: Regardless of the mode, ensure the program is installed and firewall exceptions are added on every device.
+
+![client_example](media/client.png)
+
 #### Common info methods:
 
 ##### Server Methods
-
-![server_example](media/server.png)
-![client_example](media/client.png)
 
 Set up server for managing internal devices
 
