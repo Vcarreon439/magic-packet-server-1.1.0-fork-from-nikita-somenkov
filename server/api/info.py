@@ -5,14 +5,26 @@ __email__ = "somenkov.nikita@icloud.com, victor.carreon@pm.me"
 __copyright__ = "Copyright 2020–2026, Nikita Somenkov & Victor Carreon"
 __license__ = "GPL"
 
+import os
 import pathlib, sqlite3, threading
 import flask, flask.json, flask.blueprints
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+def _resolve_db_path() -> pathlib.Path:
+    explicit_path = os.environ.get("MP_DB_PATH")
+    if explicit_path:
+        return pathlib.Path(explicit_path).expanduser()
+
+    data_dir = os.environ.get("MP_DATA_DIR")
+    if data_dir:
+        return pathlib.Path(data_dir).expanduser() / "devices.db"
+
+    return pathlib.Path(__file__).resolve().parent.parent / "data" / "devices.db"
+
 info = flask.blueprints.Blueprint("info", __name__)
 
-_DB_PATH = pathlib.Path(__file__).resolve().parent.parent / "data" / "devices.db"
+_DB_PATH = _resolve_db_path()
 
 # ---- Cache & lock (thread-safe) ----
 _cache_lock = threading.Lock()
