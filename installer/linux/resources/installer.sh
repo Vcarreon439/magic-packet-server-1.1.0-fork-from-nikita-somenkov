@@ -4,6 +4,7 @@ set -e
 
 default_prefix="/usr/bin"
 default_systemd_prefix="/usr/lib/systemd/system"
+default_data_dir="/var/lib/mpserver"
 
 function usage() {
     echo ""
@@ -61,6 +62,8 @@ function generate_systemd() {
     local path="$3"
     local user="$4"
     local depend="$4"
+    local depend="$5"
+    local data_dir="$6"
 
     cat >"$path" <<ENDL
 [Unit]
@@ -76,7 +79,7 @@ ENDL
 
     if test -n "$depend"; then
         cat >>"$path" <<ENDL
-Requires=depend
+Requires=$depend
 ENDL
     fi
 
@@ -84,6 +87,7 @@ ENDL
 
 [Service]
 ExecStart=$binary
+Environment=MP_DATA_DIR=$data_dir
 
 [Install]
 WantedBy=multi-user.target
@@ -112,8 +116,10 @@ function do_install() {
         useradd --comment "Magic Packet Server User" --no-create-home --system mpserver
     fi
 
-    generate_systemd "Magic Packet Worker" "$prefix/mpworker" "$systemd_prefix/mpworker.service"
-    generate_systemd "Magic Packet Server" "$prefix/mpserver" "$systemd_prefix/mpserver.service" mpserver mpworker.service
+    install -d -m 750 -o mpserver -g mpserver "$default_data_dir"
+
+    generate_systemd "Magic Packet Worker" "$prefix/mpworker" "$systemd_prefix/mpworker.service" "" "" "$default_data_dir"
+    generate_systemd "Magic Packet Server" "$prefix/mpserver" "$systemd_prefix/mpserver.service" mpserver mpworker.service "$default_data_dir"
 
     systemctl enable --quiet mpworker
     systemctl enable --quiet mpserver
