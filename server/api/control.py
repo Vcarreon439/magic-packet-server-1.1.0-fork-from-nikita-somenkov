@@ -9,6 +9,7 @@ import flask
 import flask.json
 import flask.blueprints
 import json
+import os
 import typing
 from wakeonlan import send_magic_packet
 import sqlite3
@@ -16,7 +17,20 @@ import pathlib
 import requests
 import lib.connectivity
 
-_DB_PATH = pathlib.Path(__file__).resolve().parent.parent / "data" / "devices.db"
+def _resolve_db_path() -> pathlib.Path:
+    explicit_path = os.environ.get("MP_DB_PATH")
+    if explicit_path:
+        return pathlib.Path(explicit_path).expanduser()
+
+    data_dir = os.environ.get("MP_DATA_DIR")
+    if data_dir:
+        return pathlib.Path(data_dir).expanduser() / "devices.db"
+
+    return pathlib.Path(__file__).resolve().parent.parent / "data" / "devices.db"
+
+
+_DB_PATH = _resolve_db_path()
+
 control = flask.blueprints.Blueprint("control", __name__)
 _API_KEY_SETTING = "api_key"
 
@@ -100,8 +114,6 @@ def _validate_api_key():
 
 @control.route("/control/shutdown", methods=["POST"])
 def shutdown():
-
-
 
     if _is_server_mode():
         return flask.json.jsonify(
